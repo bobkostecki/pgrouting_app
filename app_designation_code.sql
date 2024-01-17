@@ -29,6 +29,21 @@ ON st_contains(g.geom, r.geom) where maxspeed <= 90
 and fclass not in ('bridleway','footway', 'steps', 'path', 'busway', 'service','pedestrian');
 alter table gis.roads add primary key (gid);
 
+
+--Listing 1.5.1 handling multi-level junctions 
+alter table gis.roads
+add column bridge_tunnel boolean;
+update gis.roads
+set bridge_tunnel = (
+SELECT
+CASE
+ WHEN bridge='T' THEN true
+ WHEN tunnel='T' THEN true
+ELSE
+ false
+END);
+
+
 --Listing 1.6 table creating with edges up to 50m
 CREATE TABLE gis.roads_50 AS
 SELECT row_number() OVER (ORDER BY gid asc)AS gid,gid AS old_id, ST_LineSubstring(geom, 50.00*n/length,
@@ -46,7 +61,7 @@ CROSS JOIN generate_series(0,10000) AS n
 WHERE n*50.00/length < 1;
 
 --Listing 1.7 Query performing correction of the net topology 
-SELECT pgr_nodeNetwork('gis.roads_50', 0.01, 'gid', 'geom');
+SELECT pgr_nodeNetwork('gis.roads_50', 0.01, 'gid', 'geom',rows_where:= 'bridge_tunnel= false', outall:=true );
 
 --Listing 1.8 Query adding cost column to netowrk table
 ALTER TABLE gis.roads_50_noded ADD COLUMN length double precision;
