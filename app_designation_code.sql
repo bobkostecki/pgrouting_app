@@ -46,13 +46,14 @@ END);
 
 --Listing 1.6 table creating with edges up to 50m
 CREATE TABLE gis.roads_50 AS
-SELECT row_number() OVER (ORDER BY gid asc)AS gid,gid AS old_id, ST_LineSubstring(geom, 50.00*n/length,
+SELECT row_number() OVER (ORDER BY gid asc)AS gid,gid AS old_id, bridge_tunnel, ST_LineSubstring(geom, 50.00*n/length,
   CASE
 	WHEN 50.00*(n+1) < length THEN 50.00*(n+1)/length
 	ELSE 1
   END) ::geometry(linestring,2180) As geom 
 FROM
   (SELECT roads.gid,
+  bridge_tunnel,
   ST_LineMerge(roads.geom) AS geom, --st_linemerge in the case connected multilines
   ST_Length(roads.geom) As length
   FROM gis.roads
